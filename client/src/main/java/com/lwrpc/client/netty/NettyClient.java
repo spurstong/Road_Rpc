@@ -1,10 +1,14 @@
 package com.lwrpc.client.netty;
 
+import com.lwrpc.client.bean.SpringBeanFactory;
+import com.lwrpc.client.channel.ChannelHolder;
+import com.lwrpc.client.connect.LwRequestManager;
 import com.lwrpc.common.Serialize.HessianSerializer;
 import com.lwrpc.common.Serialize.LwRpcDecoder;
 import com.lwrpc.common.Serialize.LwRpcEncoder;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
+import com.lwrpc.registry.data.URL;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -16,26 +20,27 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PreDestroy;
 import java.util.Date;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class NettyClient  {
-    private String host;
-    private Integer port;
+public class NettyClient implements Runnable  {
+    private String requestId;
+    private URL url;
     private LwResponse response;
-    private EventLoopGroup group;
-    private ChannelFuture future = null;
-    private Object obj = new Object();
-    private NettyClientHandler nettyClientHandler;
-    public NettyClient(String host, Integer port) {
-        this.host = host;
-        this.port = port;
+    private CountDownLatch latch;
+    private ClientHandler clientHandler;
+
+    public NettyClient(String requestId, URL url, CountDownLatch latch) {
+        this.requestId = requestId;
+        this.url = url;
+        this.latch = latch;
+        this.clientHandler = SpringBeanFactory.getBean(ClientHandler.class);
     }
 
-
-    public LwResponse send(LwRequest request) throws Exception{
-        nettyClientHandler = new NettyClientHandler(request);
-        group = new NioEventLoopGroup();
+    @Override
+    public void run() {
+        EventLoopGroup group = new NioEventLoopGroup();
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(group)
                 .channel(NioSocketChannel.class)
@@ -49,22 +54,23 @@ public class NettyClient  {
                         pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
                         pipeline.addLast(new LwRpcEncoder(LwRequest.class, new HessianSerializer()));
                         pipeline.addLast(new LwRpcDecoder(LwResponse.class, new HessianSerializer()));
-                        pipeline.addLast(nettyClientHandler);
+                        pipeline.addLast(clientHandler);
                     }
                 });
-        System.out.println("host:" + host);
-        future = bootstrap.connect(host, port).sync();
-        nettyClientHandler.getCountDownLatch().await();
-        this.response = nettyClientHandler.getLwResponse();
-        return this.response;
+        try {
+            ChannelFuture future = bootstrap.connect(url.getHostname(), url.getPort()).sync();
+            //连接成功
+            if (future.isSuccess()) {
+                ChannelHolder channelHolder = ChannelHolder.builder()
+                        .channel(future.channel())
+                        .eventLoopGroup(group).build();
+                LwRequestManager.registerChannelHolder(requestId, channelHolder);
+                latch.countDown();
+            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
-
-    @PreDestroy
-    public void close() {
-        group.shutdownGracefully();
-        future.channel().closeFuture().syncUninterruptibly();
-    }
-
 }
 
 //    private void connect(Bootstrap bootstrap, String host, int port, int retry) {

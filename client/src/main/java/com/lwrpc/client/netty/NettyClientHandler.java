@@ -1,6 +1,5 @@
 package com.lwrpc.client.netty;
 
-import com.lwrpc.client.future.DefaultFuture;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
 import io.netty.channel.*;

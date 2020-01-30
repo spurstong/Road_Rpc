@@ -53,6 +53,9 @@ public class URL implements Serializable {
         return this.hostname +":" + this.port;
     }
 
+    public String getAllInformation() {
+        return this.hostname + ":" + this.port + "_" + this.interfaceName + "_" + this.implClassName;
+    }
     @Override
     public int hashCode() {
         return Objects.hash(hostname, port, implClassName);

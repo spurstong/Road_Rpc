@@ -13,7 +13,10 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
 import javax.swing.plaf.synth.SynthEditorPaneUI;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class ZKRegister  {
@@ -37,7 +40,7 @@ public class ZKRegister  {
             Stat stat = client.checkExists().forPath(getPath(interfaceName, url.toString()));
             if (stat != null) {
                 System.out.println("该节点已存在！");
-                return;
+                client.delete().forPath(getPath(interfaceName, url.toString()));
             }
             client.create()
                     .creatingParentsIfNeeded()
@@ -49,6 +52,42 @@ public class ZKRegister  {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+
+    public static Map<String, List<URL>> getAllUrl() {
+        Map<String, List<URL>> mapList = null;
+        try {
+            List<String> serviceList = client.getChildren().forPath("/");
+            mapList = new HashMap<>(serviceList.size());
+            for (String s : serviceList) {
+                mapList.put(s, getService(s));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return mapList;
+    }
+
+
+    public static List<URL> getService(String serviceName) {
+        List<URL> urls = null;
+        try {
+            List<String> urlList = client.getChildren().forPath(getPath(serviceName));
+            if (urlList != null) {
+                if (urlList != null) {
+                    urls = new ArrayList<>(urlList.size());
+                }
+                for (String s : urlList) {
+                    String[] url = s.split(":");
+                    String imlClassName = get(serviceName, s);
+                    urls.add(new URL(url[0], Integer.valueOf(url[1]), serviceName, imlClassName));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return urls;
     }
 
     public static void remove(String url) {
@@ -67,16 +106,21 @@ public class ZKRegister  {
         }
     }
 
-    public static URL random(String interfaceName) {
+    public static List<URL> random(String interfaceName) {
         try {
 
             System.out.println("开始查找服务节点：" + getPath(interfaceName));
             List<String> urlList = client.getChildren().forPath("/" + interfaceName);
             System.out.println("结果：" + urlList);
-            String serviceUrl = urlList.get(0);
-            String[] urls = serviceUrl.split(":");
-            String implClassName = get(interfaceName, serviceUrl);
-            return new URL(urls[0], Integer.valueOf(urls[1]), interfaceName, implClassName);
+            List<URL> result = new ArrayList<>();
+            for(String serviceUrl : urlList) {
+                String[] urls = serviceUrl.split(":");
+                String implClassName = get(interfaceName, serviceUrl);
+                System.out.println(implClassName);
+                result.add(new URL(urls[0], Integer.valueOf(urls[1]), interfaceName, implClassName));
+            }
+
+            return result;
         } catch (Exception e) {
             System.out.println(e);
             e.printStackTrace();

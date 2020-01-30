@@ -7,6 +7,7 @@ import com.lwrpc.common.Serialize.LwRpcEncoder;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
 import com.lwrpc.registry.heartbeat.HeartBeatClient;
+import com.lwrpc.server.beanutil.ServerConfig;
 import com.lwrpc.server.handler.ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -22,8 +23,9 @@ import org.springframework.stereotype.Component;
 import javax.annotation.PreDestroy;
 import java.net.InetAddress;
 
-@Component
+
 @Slf4j
+@Component
 public class NettyServer {
     private EventLoopGroup boss = null;
     private EventLoopGroup worker = null;
@@ -33,6 +35,8 @@ public class NettyServer {
     private String ZkServerAddress;
     @Autowired
     private ServerHandler serverHandler;
+
+
     public void start() throws Exception {
         log.info("成功");
         boss = new NioEventLoopGroup();
@@ -54,6 +58,7 @@ public class NettyServer {
                         }
                     });
             String hostAddress = "127.0.0.1";
+
             ChannelFuture future = serverBootstrap.bind(hostAddress, port).sync();
             String[] strs = ZkServerAddress.split(":");
             String zkHostname = strs[0];
@@ -73,4 +78,5 @@ public class NettyServer {
         worker.shutdownGracefully().sync();
         log.info("关闭netty");
     }
+
 }
