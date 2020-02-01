@@ -1,5 +1,7 @@
 # lightWeightRpc
-**轻量级RPC第三版**
+`**轻量级RPC第三版**`
+不同版本存放在了不同branch上
+
 # 新增内容
 - 利用Netty的`Promise`来实现传送的异步
 - 构建线程池`LwRequestPool`来管理发送的请求线程
