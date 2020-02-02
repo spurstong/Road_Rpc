@@ -1,8 +1,11 @@
 package com.lwrpc.common.Serialize;
 
+import com.lwrpc.common.spi.RoadSpi;
+
 import java.io.IOException;
 
 //序列化接口
+@RoadSpi("hession")
 public interface Serializer {
     //将java对象转换为二进制
     byte[] serialize(Object object) throws IOException;

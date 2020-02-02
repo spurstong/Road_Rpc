@@ -19,6 +19,7 @@ public class LwRequestPool {
 
     public LwResponse fetchResponse(String requestId) throws Exception {
         Promise<LwResponse> promise = requestPool.get(requestId);
+        System.out.println("promise结果：" + promise);
         if (promise == null)
             return null;
         LwResponse response = promise.get(10, TimeUnit.SECONDS);

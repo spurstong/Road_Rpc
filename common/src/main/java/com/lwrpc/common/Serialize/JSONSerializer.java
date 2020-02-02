@@ -1,9 +1,11 @@
 package com.lwrpc.common.Serialize;
 
 import com.alibaba.fastjson.JSON;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Component
 public class JSONSerializer implements Serializer {
     @Override
     public byte[] serialize(Object object) throws IOException {

@@ -11,6 +11,7 @@ import org.springframework.context.annotation.ComponentScan;
 import java.net.InetAddress;
 
 @SpringBootApplication
+@ComponentScan(basePackages = {"com.lwrpc.*"})
 public class ServerApplication  {
 
     public static void main(String[] args)  {

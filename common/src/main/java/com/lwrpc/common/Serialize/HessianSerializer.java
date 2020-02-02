@@ -3,11 +3,13 @@ package com.lwrpc.common.Serialize;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
 import com.sun.xml.internal.bind.v2.util.ByteArrayOutputStreamEx;
+import org.springframework.stereotype.Component;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+@Component
 public class HessianSerializer implements Serializer {
     @Override
     public byte[] serialize(Object object) throws IOException {

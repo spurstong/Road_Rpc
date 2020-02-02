@@ -1,12 +1,11 @@
 package com.lwrpc.server.netty;
 
-import com.lwrpc.common.Serialize.HessianSerializer;
-import com.lwrpc.common.Serialize.JSONSerializer;
-import com.lwrpc.common.Serialize.LwRpcDecoder;
-import com.lwrpc.common.Serialize.LwRpcEncoder;
+import com.lwrpc.common.Serialize.*;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
+import com.lwrpc.common.spi.ExtensionLoader;
 import com.lwrpc.registry.heartbeat.HeartBeatClient;
+import com.lwrpc.server.beanutil.BeanHolder;
 import com.lwrpc.server.beanutil.ServerConfig;
 import com.lwrpc.server.handler.ServerHandler;
 import io.netty.bootstrap.ServerBootstrap;
@@ -15,6 +14,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,11 +36,16 @@ public class NettyServer {
     @Autowired
     private ServerHandler serverHandler;
 
-
+    private ExtensionLoader extensionLoader;
+    @Autowired
+    private BeanHolder beanHolder;
     public void start() throws Exception {
         log.info("成功");
         boss = new NioEventLoopGroup();
         worker = new NioEventLoopGroup();
+        extensionLoader = beanHolder.getBean(ExtensionLoader.class);
+        Serializer hessianSerializer = (Serializer)extensionLoader.getServiceExtension(Serializer.class);
+        System.out.println("hession:" + hessianSerializer);
         try {
             ServerBootstrap serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(boss, worker)
@@ -52,8 +57,8 @@ public class NettyServer {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline pipeline = socketChannel.pipeline();
                             pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
-                            pipeline.addLast(new LwRpcEncoder(LwResponse.class, new HessianSerializer()));
-                            pipeline.addLast(new LwRpcDecoder(LwRequest.class, new HessianSerializer()));
+                            pipeline.addLast(new LwRpcEncoder(LwResponse.class, hessianSerializer));
+                            pipeline.addLast(new LwRpcDecoder(LwRequest.class, hessianSerializer));
                             pipeline.addLast(serverHandler);
                         }
                     });

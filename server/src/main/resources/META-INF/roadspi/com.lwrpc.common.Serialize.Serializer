@@ -1,0 +1,2 @@
+hession=com.lwrpc.common.Serialize.HessianSerializer
+json=com.lwrpc.common.Serialize.JSONSerializer

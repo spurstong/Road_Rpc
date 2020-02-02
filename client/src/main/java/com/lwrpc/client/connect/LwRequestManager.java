@@ -27,7 +27,6 @@ public class LwRequestManager {
         CountDownLatch latch = new CountDownLatch(1);
         requestExecutor.execute(new NettyClient(requestId, url, latch));
         latch.await();
-
         ChannelHolder channelHolder = channelHolderMap.get(requestId);
         channelHolder.getChannel().writeAndFlush(request);
         log.info("客户端发送消息：{}", channelHolder);
