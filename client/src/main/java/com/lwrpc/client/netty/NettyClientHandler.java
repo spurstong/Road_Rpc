@@ -3,6 +3,8 @@ package com.lwrpc.client.netty;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
 import io.netty.channel.*;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -29,6 +31,9 @@ public class NettyClientHandler extends ChannelInboundHandlerAdapter {
     public LwResponse getLwResponse() {
         return this.response;
     }
+
+
+
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         log.info("客户端向客户端发送消息");

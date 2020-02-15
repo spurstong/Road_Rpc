@@ -1,20 +1,20 @@
-package com.lwrpc.common.util;
+package com.lwrpc.registry.util;
 
 import com.lwrpc.registry.data.URL;
-import io.netty.util.internal.ConcurrentSet;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.core.NamedThreadLocal;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 
 @Slf4j
 public class FileUtil  {
@@ -61,12 +61,63 @@ public class FileUtil  {
         }
     }
 
+
+    public void alterServiceCache(String serviceName, String url) {
+        /*
+        url格式：/com.lwrpc.common.service.HelloService/127.0.0.1:8888
+         */
+        String[] path = url.split("/");
+        String pathService = path[1];
+        String pathNode = path[2];
+        System.out.println(pathNode);
+        System.out.println(pathService);
+
+        for (Map.Entry<Object, Object> entry : properties.entrySet()) {
+            String key = (String)entry.getKey();
+            String value = (String)entry.getValue();
+            System.out.println(value);
+            if (key != null && key.equals(serviceName)) {
+                String[] strs = value.split(";");
+                String cacheNode = null;
+                boolean isExist = false;
+                StringBuilder buf = new StringBuilder();
+                for (String str: strs) {
+                    String[] info = str.split("_");
+                    cacheNode = info[0];
+                    if (cacheNode.equals(pathNode)) {
+                        isExist = true;
+                    } else {
+                        if(buf.length() > 0) {
+                            buf.append(";");
+                        }
+                        buf.append(str);
+                    }
+                }
+                if (isExist == true) {
+                    properties.remove(serviceName);
+                    if (buf.length() > 0) {
+                        properties.setProperty(serviceName, buf.toString());
+                    }
+
+                    long version = lastCacheChanged.incrementAndGet();
+                    if (syncSaveFile) {
+                        doSaveProperties(version);
+                    } else {
+                        registerCacheExecutor.execute(new SaveProperties(version));
+                    }
+
+                }
+
+
+            }
+        }
+    }
     public List<URL> getServiceUrls(String serviceName) {
         List<URL> urls = new ArrayList<>();
         for (Map.Entry<Object, Object> entry : properties.entrySet()) {
             String key = (String)entry.getKey();
             String value = (String)entry.getValue();
-            System.out.println(value);
+            System.out.println("aaa:"+ value);
             if (key != null && key.equals(serviceName)) {
                 String[] strs = value.split(";");
                 for (String str: strs) {
@@ -91,7 +142,7 @@ public class FileUtil  {
                 lockfile.createNewFile();
             }
             try(RandomAccessFile raf = new RandomAccessFile(lockfile, "rw");
-            FileChannel channel = raf.getChannel();) {
+                FileChannel channel = raf.getChannel();) {
                 FileLock lock = channel.tryLock();
                 if (lock == null) {
                     throw new IOException("不能锁住注册的缓存文件");
@@ -166,3 +217,4 @@ public class FileUtil  {
 
 
 }
+

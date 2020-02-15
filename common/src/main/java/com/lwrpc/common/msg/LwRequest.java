@@ -11,7 +11,7 @@ public class LwRequest implements Serializable {
     private Class<?>[] parameterTypes;
     private Object[] parameters;
     private String implClassName;
-
+    private Integer eventType;
     public String getImplClassName() {
         return implClassName;
     }
@@ -62,7 +62,11 @@ public class LwRequest implements Serializable {
         this.parameters = parameters;
     }
 
+    public Integer getEventType() {
+        return eventType;
+    }
 
-
-
+    public void setEventType(Integer eventType) {
+        this.eventType = eventType;
+    }
 }

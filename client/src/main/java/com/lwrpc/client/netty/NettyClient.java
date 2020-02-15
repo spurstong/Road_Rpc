@@ -15,6 +15,9 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32FrameDecoder;
+import io.netty.handler.codec.protobuf.ProtobufVarint32LengthFieldPrepender;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -51,6 +54,8 @@ public class NettyClient implements Runnable  {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         ChannelPipeline pipeline = socketChannel.pipeline();
+                        //10秒没发送信息，将IdleStateHandler添加到ChannelPipeline中
+                        pipeline.addLast(new IdleStateHandler(0, 10, 0));
                         pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
                         pipeline.addLast(new LwRpcEncoder(LwRequest.class, new HessianSerializer()));
                         pipeline.addLast(new LwRpcDecoder(LwResponse.class, new HessianSerializer()));

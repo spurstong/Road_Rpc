@@ -14,6 +14,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.timeout.IdleStateHandler;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -57,6 +58,8 @@ public class NettyServer {
                         protected void initChannel(SocketChannel socketChannel) throws Exception {
                             ChannelPipeline pipeline = socketChannel.pipeline();
                             pipeline.addLast(new LengthFieldBasedFrameDecoder(65535, 0, 4));
+                            //200秒没有向客户端发送消息或接收消息就关闭通道
+                            pipeline.addLast(new IdleStateHandler(0, 0, 200));
                             pipeline.addLast(new LwRpcEncoder(LwResponse.class, hessianSerializer));
                             pipeline.addLast(new LwRpcDecoder(LwRequest.class, hessianSerializer));
                             pipeline.addLast(serverHandler);

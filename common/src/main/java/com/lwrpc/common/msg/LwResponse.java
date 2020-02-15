@@ -5,6 +5,7 @@ import java.io.Serializable;
 public class LwResponse implements Serializable{
     private String requestId;
     private Object result;
+    private Integer eventType;
     private Throwable cause;
 
     public boolean isError() {
@@ -33,6 +34,14 @@ public class LwResponse implements Serializable{
 
     public void setCause(Throwable cause) {
         this.cause = cause;
+    }
+
+    public Integer getEventType() {
+        return eventType;
+    }
+
+    public void setEventType(Integer eventType) {
+        this.eventType = eventType;
     }
 }
 

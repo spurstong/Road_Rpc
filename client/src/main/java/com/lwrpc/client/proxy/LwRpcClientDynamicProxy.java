@@ -3,18 +3,13 @@ package com.lwrpc.client.proxy;
 import com.lwrpc.client.async.LwRequestPool;
 import com.lwrpc.client.bean.SpringBeanFactory;
 import com.lwrpc.client.connect.LwRequestManager;
-import com.lwrpc.client.netty.NettyClient;
+import com.lwrpc.common.msg.Event;
 import com.lwrpc.common.msg.LwRequest;
 import com.lwrpc.common.msg.LwResponse;
-import com.lwrpc.common.util.FileUtil;
 import com.lwrpc.registry.ZK.ZKRegister;
 import com.lwrpc.registry.data.URL;
+import com.lwrpc.registry.util.FileUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -44,6 +39,7 @@ public class LwRpcClientDynamicProxy<T> implements InvocationHandler {
         lwRequest.setMethodName(methodName);
         lwRequest.setParameterTypes(parameterTypes);
         lwRequest.setParameters(args);
+        lwRequest.setEventType(Event.SERVICE);
         System.out.println(className);
         URL url = null;
         List<URL> urls = fileUtil.getServiceUrls(className);
@@ -51,7 +47,7 @@ public class LwRpcClientDynamicProxy<T> implements InvocationHandler {
 
         if (urls == null || urls.size() == 0) {
             log.info("该服务没有缓存");
-            List<URL> addresss = ZKRegister.random(className);
+            List<URL> addresss = ZKRegister.getServiceInfo(className);
             fileUtil.saveServices(className, addresss);
             url = addresss.get(0);
 

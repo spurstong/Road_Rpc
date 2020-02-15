@@ -1,3 +1,3 @@
 #RPC Server Cache
-#Thu Jan 30 14:53:51 CST 2020
-com.lwrpc.common.service.HelloService=127.0.0.1\:8888_com.lwrpc.common.service.HelloService_com.lwrpc.server.HelloServiceImpl
+#Sat Feb 15 20:24:11 CST 2020
+

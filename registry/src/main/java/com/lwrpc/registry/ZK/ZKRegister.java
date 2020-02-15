@@ -2,17 +2,18 @@ package com.lwrpc.registry.ZK;
 
 import com.lwrpc.registry.data.URL;
 import com.lwrpc.registry.data.ZKConsts;
+import com.lwrpc.registry.util.FileUtil;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.curator.framework.recipes.cache.PathChildrenCache;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
+import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
 import org.apache.curator.retry.RetryNTimes;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.Stat;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.stereotype.Component;
 
-import javax.swing.plaf.synth.SynthEditorPaneUI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -106,9 +107,9 @@ public class ZKRegister  {
         }
     }
 
-    public static List<URL> random(String interfaceName) {
+    public static List<URL> getServiceInfo(String interfaceName) {
         try {
-
+            addListenerForService(interfaceName);
             System.out.println("开始查找服务节点：" + getPath(interfaceName));
             List<String> urlList = client.getChildren().forPath("/" + interfaceName);
             System.out.println("结果：" + urlList);
@@ -128,6 +129,42 @@ public class ZKRegister  {
         return null;
     }
 
+
+    private static void addListenerForService(String serviceName) throws Exception {
+        //设置监听，监听所有服务下的节点变化，连接管理收到通知后会移除对应的节点
+        final PathChildrenCache childrenCache = new PathChildrenCache(client, getPath(serviceName), true);
+
+        //同步初始监听点
+        childrenCache.start(PathChildrenCache.StartMode.POST_INITIALIZED_EVENT);
+        childrenCache.getListenable().addListener(new PathChildrenCacheListener(){
+
+            @Override
+            public void childEvent(CuratorFramework client, PathChildrenCacheEvent event) throws Exception {
+                if(event.getType().equals(PathChildrenCacheEvent.Type.INITIALIZED)) {
+                    //建立完监听
+                    return;
+                }
+                //删除远程服务节点
+                if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_REMOVED)) {
+                    String path = event.getData().getPath();
+                    FileUtil fileUtil = new FileUtil(true);
+                    fileUtil.alterServiceCache(serviceName, path);
+                }
+                //节点值更新
+                if (event.getType().equals(PathChildrenCacheEvent.Type.CHILD_UPDATED)) {
+                    String path = event.getData().getPath();
+                    System.out.println(String.format("%s,节点值更新", path));
+                    byte[] implClass = event.getData().getData();
+                }
+                //增加了节点
+                if(event.getType().equals(PathChildrenCacheEvent.Type.CHILD_ADDED)) {
+                    String path = event.getData().getPath();
+                    byte[] implClass = event.getData().getData();
+                    System.out.println(String.format("增加了节点,%s", path));
+                }
+            }
+        });
+    }
     private static String get(String interfaceName, String url) {
         String res = null;
         try {
